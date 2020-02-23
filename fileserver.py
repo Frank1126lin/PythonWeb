@@ -14,7 +14,7 @@ from starlette.responses import FileResponse
 
 
 # Local for dev
-BASEURL = '127.0.0.1:8000'
+BASEURL = '0.0.0.0'
 
 # IPV4 for Production
 # def get_host_ip():
