@@ -19,15 +19,15 @@ from starlette.responses import FileResponse, Response
 
 # IPV4 for Production
 def get_host_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(('8.8.8.8', 80))
         ip = s.getsockname()[0]
     finally:
         s.close()
     return ip
 BASEURL = 'http://{0}:{1}'.format(get_host_ip(), 8001)
-print(BASEURL)
+# print(BASEURL)
 
 # 文件绝对路径
 ROOTDIR = os.getcwd()
@@ -84,8 +84,9 @@ def get_record(root, path=''):
     if not os.path.exists(abs_path):
         return 'dir is not Exist'
     if os.path.isdir(abs_path):
-        headers = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>文件共享服务</title>'
-        response = headers + '<h1>Name ---- Size ---- Type ---- Modify Date<h1>'
+        headers = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>{0}</title>'.format(BASEURL)
+        response = headers + r'<h1><a href="{0}">{1}</a></h1>'.format(BASEURL, BASEURL)
+        response = response + '<h1>Name ---- Size ---- Type ---- Modify Date<h1>'
         for name in sorted(os.listdir(abs_path)):
             file_name = name
             file_path = '/'.join([path, name])
