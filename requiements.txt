@@ -1,0 +1,7 @@
+# packages need 
+
+aiofiles
+uvicorn
+fastapi
+websockets
+
