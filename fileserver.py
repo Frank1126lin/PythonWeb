@@ -6,12 +6,13 @@
 
 
 '''
-使用FASTAPI创建文件共享服务To Be Perfect
+使用FASTAPI创建文件共享服务
 '''
 
 import os
 import time
 import socket
+import platform
 from urllib.parse import unquote
 from fastapi import FastAPI
 from starlette.responses import FileResponse, Response
@@ -30,7 +31,7 @@ BASEURL = 'http://{0}:{1}'.format(get_host_ip(), 8001)
 print(BASEURL)
 
 # 文件绝对路径
-ROOTDIR = os.getcwd()
+ROOT = os.getcwd()
 
 
 app = FastAPI()
@@ -39,70 +40,70 @@ app = FastAPI()
 # 定义主函数，默认页是根目录URL+文件列表
 @app.get('/')
 def main():
-    return get_record(ROOTDIR)
+    return views(ROOT)
 
-# 处理url TODO 多级目录如何完成
+# URL 处理
 @app.get('/{path}')
-def level1(path):
-    path = unquote(path)
-    return get_record(ROOTDIR, path)
+def level(path):
+    path2 = unquote(path)
+    list_path = path2.split(">") # 相对地址列表如[“home”, "frank", "123"]
+    dir_path = get_dir_path(ROOT, list_path)
+    return views(dir_path, path)
 
-@app.get('/{path}/{path2}')
-def level2(path, path2):
-    path = unquote(path)
-    path2 = unquote(path2)
-    middle_path = os.path.join(ROOTDIR, path)
-    return get_record(middle_path, path2)
 
-@app.get('/{path}/{path2}/{path3}')
-def level3(path, path2, path3):
-    path = unquote(path)
-    path2 = unquote(path2)
-    path3 = unquote(path3)
-    middle_path = os.path.join(ROOTDIR, path, path2)
-    return get_record(middle_path, path3)
-
-@app.get('/{path}/{path2}/{path3}/{path4}')
-def level3(path, path2, path3, path4):
-    path = unquote(path)
-    path2 = unquote(path2)
-    path3 = unquote(path3)
-    path4 = unquote(path4)
-    middle_path = os.path.join(ROOTDIR, path, path2, path3)
-    return get_record(middle_path, path4)
-
-#获取文件记录
-def get_record(root, path=''):
+def get_dir_path(root, list_path=None):
     '''
-    处理系统文件，并返回文件/文件夹清单
-    参数：
-    root：上层地址如home/frank/
-    path,文件或文件夹的地址名 如web
-    返回：消息/文件清单/文件/None
+    从url的相对地址转换为path的绝对地址
     '''
-    abs_path = os.path.join(root, path)
-    if not os.path.exists(abs_path):
-        return 'dir is not Exist'
-    if os.path.isdir(abs_path):
-        headers = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>文件共享服务</title>'
-        response = headers + '<h1>Name ---- Size ---- Type ---- Modify Date<h1>'
-        for name in sorted(os.listdir(abs_path)):
-            file_name = name
-            file_path = '/'.join([path, name])
-            file_size = get_size(os.path.join(abs_path, name))
-            # print(file_size)
-            file_size = str(file_size[0]) + file_size[1]
-            file_type = get_type(os.path.join(abs_path, name))
-            file_cdate = get_cdate(os.path.join(abs_path, name))
+    if list_path is None:
+        return root
+    else:
+        path = "/".join(list_path)
+        abs_path = ''.join([root, "/", path])
+        if platform.system() == "Windows":  # 因为这里os.path.join()不支持列表，所以只能自己写
+            abs_path = abs_path.replace("/","\\")
+        print(abs_path)
+        return abs_path
 
-            file_name = '<a href="' + file_path + '">' + file_name + '</a>'
-            response += '<h2>' + file_name + '----' + file_size + '----' + file_type + '----' + file_cdate + '<h2>'
-        return Response(content=response)
-    if os.path.isfile(abs_path):
-        response = FileResponse(abs_path)
+
+def views(dir_path, path=None):
+    if not os.path.exists(dir_path):
+        return "dir is not exist."
+    elif os.path.isfile(dir_path):
+        response = FileResponse(dir_path)
         return response
     else:
-        return
+        # 拿到字典数据进行展示
+        headers = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>文件共享服务</title>'
+        response = headers + '<h1>Name ---- Size ---- Type ---- Modify Date<h1>'
+        dic = dir_dict(dir_path)
+        # print(dic)
+        for k, v in dic.items():
+            if path is None:
+                file_url = k
+            else:
+                file_url = '>'.join([path,k])
+            file_href =  '<a href="' + file_url + '">' + k + '</a>'
+            response += '<h2>' + file_href + '----' + v[0] + '----' + v[1] + '----' + v[2] + '<h2>'
+        return Response(content=response)
+
+
+def dir_dict(dir_path):
+    """
+    给出文件夹绝对地址，以字典形式返回文件夹内相应内容
+    """
+    if os.path.isdir(dir_path):
+        dir_dic = {}
+        for file in os.listdir(dir_path):
+            file_name = file
+            file_path = os.path.join(dir_path, file) # 函数内部使用
+            file_size = get_size(file_path)
+            file_cdate = get_cdate(file_path)
+            file_type = get_type(file_path)
+            dir_dic[file_name] = [file_size, file_type, file_cdate]
+        return dir_dic
+
+
 
 
 # 获取文件类型
@@ -159,10 +160,12 @@ def size_handle(size):
         (1, 'B'),
     ]
     if size == 0:
-        return [0, 'B']
+        return "0 B"
     for i in range(len(unit_list)):
         if size >> unit_list[i][0] > 0:
-            return [round(size / 2 ** unit_list[i][0], 2), unit_list[i][1]]
+            num = round(size / 2 ** unit_list[i][0], 2)
+            unit = unit_list[i][1]
+            return str(num)+str(unit)
 
 if __name__ == '__main__':
     import uvicorn
