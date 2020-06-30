@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
 # *_* coding: utf-8 *_*
-# @File  : fileserver.py
+# @File  : fileserver2.py
 # @Author: Frank1126lin
-# @Date  : 2020/2/19
+# @Date  : 2020/6/30
 
 
 '''
@@ -46,14 +46,14 @@ def main():
 @app.get('/{path}')
 def level(path):
     path2 = unquote(path)
-    list_path = path2.split(">") # 相对地址列表如[“home”, "frank", "123"]
-    dir_path = get_dir_path(ROOT, list_path)
+    list_path = path2.split(">") # 相对地址列表，如[“home”, "frank", "123"]
+    dir_path = get_dir_path(ROOT, list_path) # 获取url对应文件地址
     return views(dir_path, path)
 
 
 def get_dir_path(root, list_path=None):
     '''
-    从url的相对地址转换为path的绝对地址
+    从url的相对地址转换为路径的文件绝对地址
     '''
     if list_path is None:
         return root
@@ -62,24 +62,32 @@ def get_dir_path(root, list_path=None):
         abs_path = ''.join([root, "/", path])
         if platform.system() == "Windows":  # 因为这里os.path.join()不支持列表，所以只能自己写
             abs_path = abs_path.replace("/","\\")
-        print(abs_path)
+        # print(abs_path)
         return abs_path
 
 
 def views(dir_path, path=None):
+    """
+    视图函数，返回相应视图
+    """
+    # 1. 路径不存在
     if not os.path.exists(dir_path):
         return "dir is not exist."
+
+    # 2. 路径地址是文件
     elif os.path.isfile(dir_path):
         response = FileResponse(dir_path)
         return response
+    # 3. 路径地址是文件夹
     else:
         # 拿到字典数据进行展示
+        dic = dir_dict(dir_path)
+        # 准备前端HTML路径（这里可以用jinja2写））
         headers = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>文件共享服务</title>'
         response = headers + '<h1>Name ---- Size ---- Type ---- Modify Date<h1>'
-        dic = dir_dict(dir_path)
-        # print(dic)
+
         for k, v in dic.items():
-            if path is None:
+            if path is None: # 针对根目录
                 file_url = k
             else:
                 file_url = '>'.join([path,k])
