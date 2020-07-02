@@ -16,6 +16,8 @@ from fastapi.templating import Jinja2Templates
 
 
 ROOT = input("Please paste your share path here.\n >>> ")
+if ROOT is '':
+    ROOT = os.path.abspath(os.path.dirname(os.getcwd()))
 
 
 app = FastAPI()
