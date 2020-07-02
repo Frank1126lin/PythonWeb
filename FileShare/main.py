@@ -15,8 +15,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 
-ROOT = "/media/frank/LinDB"
-print(get_host_ip())
+ROOT = input("Please paste your share path here.\n >>> ")
+
 
 app = FastAPI()
 
@@ -28,6 +28,8 @@ templates = Jinja2Templates(directory="./statics/templates")
 @app.get("/")
 async def index(request: Request):
     dir_di = dir_dict(ROOT)
+    if dir_di is None:
+        return "None dir."
     for k, v in dir_di.items():
         v.append(k)
     return templates.TemplateResponse("index.html", {"request": request, "dir_di": dir_di})
@@ -78,3 +80,9 @@ def dir_dict(dir_path:str):
         return dir_dict
     else:
         pass
+
+if __name__ == '__main__':
+    import uvicorn
+    port = 8001
+    print("Click Here: http://{0}:{1}".format(get_host_ip(), port))
+    uvicorn.run(app, host='0.0.0.0', port=port)
