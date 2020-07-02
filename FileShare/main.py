@@ -46,6 +46,8 @@ async def main(request: Request, path:str):
         path = ROOT
     else:
         path = ''.join([ROOT, "/", "/".join(list_path)])
+        if platform.system() == "Windows":
+            path = path.replace("/", "\\")
 
     if not os.path.exists(path):
 
