@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Share Application</title>
+</head>
+<body>
+<h1><font color="purple">文件共享服务</font> </h1>
+
+<h2><a href="/"><font color="blue">返回</font></a></h2>
+
+<table  cellpadding="10" cellspacing="10"  >
+    <tr>
+        <th align="center">文件名</th>
+        <th align="center">文件大小</th>
+        <th align="center">文件类型</th>
+        <th align="center">修改日期</th>
+    </tr>
+
+        {% for name, value in dir_di.items() %}
+    <tr>
+        <td align="left"><a href="{{ value[3] }}">{{ name }}</a></td>
+        <td align="center">{{ value[0] }}</td>
+        <td align="center">{{ value[1] }}</td>
+        <td align="left">{{ value[2] }}</td>
+    </tr>
+        {% endfor %}
+
+</table>
+
+</body>
+</html>
