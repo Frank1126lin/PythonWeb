@@ -5,7 +5,7 @@
 # @Date  : 2020/7/2
 
 import os
-
+import platform
 from MyIP import get_host_ip
 from FileTools import get_type, get_cdate, get_size
 from urllib.parse import unquote
@@ -15,14 +15,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 
-ROOT = input("Please paste your share path here.\n >>> ")
-if ROOT is '':
-    ROOT = os.path.abspath(os.path.dirname(os.getcwd()))
-
+ROOT = os.path.abspath(os.path.dirname(os.getcwd()))
 
 app = FastAPI()
-
-app.mount("/statics", StaticFiles(directory="statics"), name="statics")
 
 templates = Jinja2Templates(directory="./statics/templates")
 
@@ -37,6 +32,10 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "dir_di": dir_di})
 
 
+@app.get("/favicon.ico")
+async def get_ico(request: Request):
+    return FileResponse("share.png")
+
 @app.get('/{path}')
 async def main(request: Request, path:str):
     path2 = unquote(path)
@@ -50,6 +49,7 @@ async def main(request: Request, path:str):
         path = ''.join([ROOT, "/", "/".join(list_path)])
         if platform.system() == "Windows":
             path = path.replace("/", "\\")
+
 
     if not os.path.exists(path):
 
@@ -88,5 +88,6 @@ def dir_dict(dir_path:str):
 if __name__ == '__main__':
     import uvicorn
     port = 8001
+    print(ROOT)
     print("Click Here: http://{0}:{1}".format(get_host_ip(), port))
     uvicorn.run(app, host='0.0.0.0', port=port)
